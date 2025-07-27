@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain User Data Storage</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.1/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-section h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .data-display {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .data-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .data-item h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .data-field {
+            margin-bottom: 5px;
+        }
+
+        .data-field strong {
+            color: #495057;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Blockchain User Data Storage</h1>
+        
+        <div id="connectionStatus" class="status disconnected">
+            Not Connected to Wallet
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3 id="totalRecords">0</h3>
+                <p>Total Records</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalUsers">0</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>📝 Store User Data</h2>
+            <form id="dataForm">
+                <div class="form-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="age">Age:</label>
+                    <input type="number" id="age" min="1" max="150" required>
+                </div>
+                <button type="submit" id="storeBtn" disabled>Store Data on Blockchain</button>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2>🔍 Retrieve Data</h2>
+            <button id="getMyDataBtn" disabled>Get My Data</button>
+            <button id="refreshStatsBtn" disabled>Refresh Stats</button>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="dataId">Get Data by ID:</label>
+                <input type="number" id="dataId" min="1" placeholder="Enter data ID">
+                <button type="button" id="getByIdBtn" disabled>Get by ID</button>
+            </div>
+        </div>
+
+        <div id="messages"></div>
+        <div id="dataDisplay"></div>
+    </div>
+
+    <script>
+        // Contract configuration
+        const CONTRACT_ADDRESS = "YOUR_CONTRACT_ADDRESS_HERE"; // Replace with deployed contract address
+        const CONTRACT_ABI = [
+            "function storeUser Data(string memory _name, string memory _email, uint256 _age) public",
+            "function getMyData() public view returns (tuple(uint256 id, string name, string email, uint256 age, uint256 timestamp, address userAddress)[])",
+            "function getDataById(uint256 _id) public view returns (tuple(uint256 id, string name, string email, uint256 age, uint256 timestamp, address userAddress))",
+            "function getTotalRecords() public view returns (uint256)",
+            "function getTotalUsers() public view returns (uint256)",
+            "function userHasData(address _user) public view returns (bool)",
+            "event DataStored(uint256 indexed id, address indexed user, string name, uint256 timestamp)"
+        ];
+
+        let provider;
+        let signer;
+        let contract;
+        let userAccount;
+
+        // DOM elements
+        const connectionStatus = document.getElementById('connectionStatus');
+        const dataForm = document.getElementById('dataForm');
+        const storeBtn = document.getElementById('storeBtn');
+        const getMyDataBtn = document.getElementById('getMyDataBtn');
+        const getByIdBtn = document.getElementById('getByIdBtn');
+        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
+        const messages = document.getElementById('messages');
+        const dataDisplay = document.getElementById('dataDisplay');
+        const totalRecords = document.getElementById('totalRecords');
+        const totalUsers = document.getElementById('totalUsers');
+
+        // Initialize the app
+        async function init() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    await connectWallet();
+                } catch (error) {
+                    showMessage('Error initializing: ' + error.message, 'error');
+                }
+            } else {
+                showMessage('Please install MetaMask to use this application!', 'error');
+            }
+        }
+
+        // Connect to wallet
+        async function connectWallet() {
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                signer = await provider.getSigner();
+                userAccount = await signer.getAddress();
+                
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                
+                connectionStatus.textContent = `Connected: ${userAccount.slice(0, 6)}...${userAccount.slice(-4)}`;
+                connectionStatus.className = 'status connected';
+                
+                // Enable buttons
+                storeBtn.disabled = false;
+                getMyDataBtn.disabled = false;
+                getByIdBtn.disabled = false;
+                refreshStatsBtn.disabled = false;
+                
+                await refreshStats();
+                showMessage('Successfully connected to wallet!', 'success');
+            } catch (error) {
+                showMessage('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        // Store user data
+        dataForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const age = parseInt(document.getElementById('age').value);
+            
+            if (!name || !email || !age) {
+                showMessage('Please fill all fields', 'error');
+                return;
+            }
+            
+            try {
+                storeBtn.disabled = true;
+                storeBtn.textContent = 'Storing...';
+                
+                const tx = await contract.storeUser Data(name, email, age);
+                showMessage('Transaction submitted! Waiting for confirmation...', 'success');
+                
+                const receipt = await tx.wait();
+                showMessage(`Data stored successfully! Transaction hash: ${receipt.hash}`, 'success');
+                
+                // Clear form
+                dataForm.reset();
+                await refreshStats();
+                
+            } catch (error) {
+                showMessage('Error storing data: ' + error.message, 'error');
+            } finally {
+                storeBtn.disabled = false;
+                storeBtn.textContent = 'Store Data on Blockchain';
+            }
+        });
+
+        // Get user's data
+        getMyDataBtn.addEventListener('click', async () => {
+            try {
+                getMyDataBtn.disabled = true;
+                getMyDataBtn.textContent = 'Loading...';
+                
+                const userData = await contract.getMyData();
+                displayUser Data(userData, 'My Data');
+                
+            } catch (error) {
+                if (error.message.includes('No data found')) {
+                    showMessage('No data found for your address', 'error');
+                } else {
+                    showMessage('Error retrieving data: ' + error.message, 'error');
+                }
+            } finally {
+                getMyDataBtn.disabled = false;
+                getMyDataBtn.textContent = 'Get My Data';
+            }
+        });
+
+        // Get data by ID
+        getByIdBtn.addEventListener('click', async () => {
+            const dataId = document.getElementById('dataId').value;
+            
+            if (!dataId) {
+                showMessage('Please enter a data ID', 'error');
+                return;
+            }
+            
+            try {
+                getByIdBtn.disabled = true;
+                getByIdBtn.textContent = 'Loading...';
+                
+                const userData = await contract.getDataById(parseInt(dataId));
+                displayUser Data([userData], `Data for ID: ${dataId}`);
+                
+            } catch (error) {
+                showMessage('Error retrieving data: ' + error.message, 'error');
+            } finally {
+                getByIdBtn.disabled = false;
+                getByIdBtn.textContent = 'Get by ID';
+            }
+        });
+
+        // Refresh statistics
+        refreshStatsBtn.addEventListener('click', refreshStats);
+
+        async function refreshStats() {
+            try {
+                const records = await contract.getTotalRecords();
+                const users = await contract.getTotalUsers();
+                
+                totalRecords.textContent = records.toString();
+                totalUsers.textContent = users.toString();
+            } catch (error) {
+                showMessage('Error refreshing stats: ' + error.message, 'error');
+            }
+        }
+
+        // Display user data
+        function displayUser Data(userData, title) {
+            let html = `<div class="data-display"><h3>${title}</h3>`;
+            
+            if (userData.length === 0) {
+                html += '<p>No data found.</p>';
+            } else {
+                userData.forEach((data, index) => {
+                    const timestamp = new Date(Number(data.timestamp) * 1000).toLocaleString();
+                    html += `
+                        <div class="data-item">
+                            <h4>Record ${index + 1} (ID: ${data.id})</h4>
+                            <div class="data-field"><strong>Name:</strong> ${data.name}</div>
+                            <div class="data-field"><strong>Email:</strong> ${data.email}</div>
+                            <div class="data-field"><strong>Age:</strong> ${data.age}</div>
+                            <div class="data-field"><strong>Address:</strong> ${data.userAddress}</div>
+                            <div class="data-field"><strong>Timestamp:</strong> ${timestamp}</div>
+                        </div>`;
+                });
+            }
+            html += '</div>';
+            dataDisplay.innerHTML = html;
+        }
+
+        // Show messages
+        function showMessage(message, type) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = type === 'error' ? 'error' : 'success';
+            msgDiv.textContent = message;
+            messages.appendChild(msgDiv);
+            setTimeout(() => {
+                msgDiv.remove();
+            }, 3000);
+        }
+
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
