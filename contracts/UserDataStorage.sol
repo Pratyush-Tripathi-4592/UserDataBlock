@@ -10,6 +10,7 @@ contract UserDataStorage {
         uint256 age;
         uint256 timestamp;
         address userAddress;
+
     }
     
     // Mapping to store user data by user address
@@ -155,3 +156,9 @@ contract UserDataStorage {
         return userDataRecords[_user].length > 0;
     }
 }
+
+
+
+//npm run node for starting the node
+//npm run test for running the tests
+//npx hardhat run scripts/deploy.js --network localhost
