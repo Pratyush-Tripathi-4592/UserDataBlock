@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
+import { ethers, formatEther, BrowserProvider } from 'ethers';
+
+// Replace ethers.utils.formatEther with formatEther
+// Replace ethers.providers.Web3Provider with BrowserProvider
 import { useWeb3React } from '@web3-react/core';
 import { InjectedConnector } from '@web3-react/injected-connector';
 import axios from 'axios';
