@@ -59,27 +59,27 @@ contract TransactionManager {
     }
 
     function verifyTransaction(uint256 _id) public onlyGovernment transactionExists(_id) {
-        Transaction storage tx = transactions[_id];
-        require(!tx.verified, "Transaction already verified");
+        Transaction storage transaction = transactions[_id];
+        require(!transaction.verified, "Transaction already verified");
 
-        tx.verified = true;
-        credits[tx.creditedPerson] += tx.amount;
+        transaction.verified = true;
+        credits[transaction.creditedPerson] += transaction.amount;
 
         emit TransactionVerified(_id, msg.sender);
-        emit CreditsAwarded(tx.creditedPerson, tx.amount);
+        emit CreditsAwarded(transaction.creditedPerson, transaction.amount);
     }
 
     function rejectTransaction(uint256 _id) public onlyGovernment transactionExists(_id) {
-        Transaction storage tx = transactions[_id];
-        require(!tx.verified, "Cannot reject an already verified transaction");
+        Transaction storage transaction = transactions[_id];
+        require(!transaction.verified, "Cannot reject an already verified transaction");
 
         delete transactions[_id];
         emit TransactionRejected(_id, msg.sender);
     }
 
     function getTransaction(uint256 _id) public view returns (uint256 id, address seller, address creditedPerson, string memory description, uint256 amount, bool verified, bool exists) {
-        Transaction storage tx = transactions[_id];
-        return (tx.id, tx.seller, tx.creditedPerson, tx.description, tx.amount, tx.verified, tx.exists);
+        Transaction storage transaction = transactions[_id];
+        return (transaction.id, transaction.seller, transaction.creditedPerson, transaction.description, transaction.amount, transaction.verified, transaction.exists);
     }
 
     function getCredits(address _person) public view returns (uint256) {

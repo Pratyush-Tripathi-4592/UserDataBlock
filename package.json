@@ -8,10 +8,16 @@
     "test": "npx hardhat test",
     "deploy": "npx hardhat run scripts/deploy.js --network localhost",
     "deploy:testnet": "npx hardhat run scripts/deploy.js --network sepolia",
+    "verify": "npx hardhat run scripts/verify-deployment.js --network localhost",
     "node": "npx hardhat node",
     "clean": "npx hardhat clean",
     "coverage": "npx hardhat coverage",
-    "size": "npx hardhat size-contracts"
+    "size": "npx hardhat size-contracts",
+    "install:all": "npm install && cd transaction-manager-backend && npm install && cd ../transaction-manager-frontend && npm install",
+    "setup": "node setup.js",
+    "start:backend": "cd transaction-manager-backend && npm start",
+    "start:frontend": "cd transaction-manager-frontend && npm start",
+    "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
   },
   "keywords": [
     "blockchain",
@@ -34,6 +40,7 @@
     "@types/chai": "^4.2.0",
     "@types/mocha": ">=9.1.0",
     "chai": "^4.2.0",
+    "concurrently": "^8.2.2",
     "ethers": "^6.7.1",
     "hardhat": "^2.26.1",
     "hardhat-gas-reporter": "^1.0.8",
